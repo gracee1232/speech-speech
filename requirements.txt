@@ -1,11 +1,10 @@
-openai-whisper
 torch
+openai-whisper
 transformers
 sentencepiece
 sacremoses
-tts
+TTS==0.22.0
 soundfile
-gtts
+numpy
 streamlit
-SpeechRecognition
-PyAudio
+pyaudio

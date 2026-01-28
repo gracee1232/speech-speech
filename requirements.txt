@@ -1,0 +1,11 @@
+openai-whisper
+torch
+transformers
+sentencepiece
+sacremoses
+tts
+soundfile
+gtts
+streamlit
+SpeechRecognition
+PyAudio

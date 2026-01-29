@@ -114,9 +114,15 @@ def process_audio(audio_bytes, target_lang):
         audio_path = tmp_file.name
     
     try:
+        # Timing variables
+        import time
+        timings = {}
+        
         # Step 1: ASR
         with st.spinner("🎧 Listening..."):
+            start_time = time.time()
             source_text = speech_to_text(audio_path)
+            timings['ASR'] = time.time() - start_time
             
             if not source_text.strip():
                 st.error("❌ No speech detected. Please try again.")
@@ -124,36 +130,68 @@ def process_audio(audio_bytes, target_lang):
         
         # Step 2: Translation
         with st.spinner("🌐 Translating..."):
+            start_time = time.time()
             translator = NLLBTranslator(target_lang)
             translated_text = translator.translate(source_text)
+            timings['Translation'] = time.time() - start_time
         
         # Step 3: TTS
         with st.spinner("🔊 Generating speech..."):
+            start_time = time.time()
             output_audio = "translated_speech.mp3"
             text_to_speech(translated_text, output_audio)
+            timings['TTS'] = time.time() - start_time
+        
+        # Calculate total time
+        total_time = sum(timings.values())
         
         # Display results
         st.markdown("---")
         st.subheader("📤 Translation Results")
         
+        # Timing metrics
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("🎧 ASR", f"{timings['ASR']:.1f}s")
+        with col2:
+            st.metric("🌐 Translation", f"{timings['Translation']:.1f}s")
+        with col3:
+            st.metric("🔊 TTS", f"{timings['TTS']:.1f}s")
+        
+        # Total time with progress bar
+        st.markdown(f"### ⏱️ Total Time: {total_time:.1f} seconds")
+        
+        # Progress breakdown
+        progress_data = [
+            ("ASR", timings['ASR'], "🎧"),
+            ("Translation", timings['Translation'], "🌐"),
+            ("TTS", timings['TTS'], "🔊")
+        ]
+        
+        for step, time_taken, icon in progress_data:
+            percentage = (time_taken / total_time) * 100
+            st.markdown(f"{icon} **{step}**: {time_taken:.1f}s ({percentage:.1f}%)")
+            st.progress(percentage / 100)
+        
+        # Results side by side
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("""
+            st.markdown(f"""
             <div class="step-box">
                 <h4>🇺🇸 English (Input)</h4>
-                <p style="font-size: 18px; margin: 10px 0;">{}</p>
+                <p style="font-size: 18px; margin: 10px 0;">{source_text}</p>
             </div>
-            """.format(source_text), unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
         
         with col2:
             lang_name = target_lang.split('_')[0]
-            st.markdown("""
+            st.markdown(f"""
             <div class="step-box">
-                <h4>🌍 {} (Output)</h4>
-                <p style="font-size: 18px; margin: 10px 0;">{}</p>
+                <h4>🌍 {lang_name.title()} (Output)</h4>
+                <p style="font-size: 18px; margin: 10px 0;">{translated_text}</p>
             </div>
-            """.format(lang_name.title(), translated_text), unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
         
         # Audio player
         if os.path.exists(output_audio):
@@ -170,8 +208,11 @@ def process_audio(audio_bytes, target_lang):
                     mime="audio/mpeg"
                 )
         
-        # Success message
-        st.success("🎉 Translation complete!")
+        # Success message with performance
+        if total_time < 10:
+            st.success(f"🚀 Lightning fast! Total time: {total_time:.1f}s")
+        else:
+            st.success(f"🎉 Translation complete! Total time: {total_time:.1f}s")
         
         # Cleanup
         os.unlink(output_audio)

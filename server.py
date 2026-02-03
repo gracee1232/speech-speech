@@ -28,6 +28,10 @@ async def websocket_endpoint(websocket: WebSocket):
             # Receive message
             message = await websocket.receive()
             
+            if message["type"] == "websocket.disconnect":
+                print("Client disconnected (event)")
+                break
+            
             if "text" in message:
                 try:
                     import json

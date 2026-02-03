@@ -4,11 +4,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket Speech Translator</title>
+    <title>LinguaFlow - Live Translation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --accent: #ff7675;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Outfit', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1e272e 0%, #0984e3 100%);
             color: white;
             display: flex;
             flex-direction: column;
@@ -16,96 +26,194 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
+            overflow: hidden;
         }
 
         .container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 3rem;
+            border-radius: 30px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             text-align: center;
-            max-width: 500px;
-            width: 100%;
+            max-width: 450px;
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
         }
 
         h1 {
+            margin: 0;
+            font-size: 3rem;
+            background: linear-gradient(to right, #fff, #dfe6e9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            margin-top: 5px;
+            color: #dfe6e9;
+            font-size: 1.1rem;
             margin-bottom: 2rem;
-            font-size: 2.5rem;
+            opacity: 0.8;
+        }
+
+        .control-panel {
+            margin-bottom: 2rem;
+        }
+
+        select {
+            padding: 12px 20px;
+            font-size: 1rem;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.2);
+            color: white;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s;
+            width: 100%;
+            appearance: none;
+            text-align: center;
+        }
+
+        select:hover,
+        select:focus {
+            background: rgba(0, 0, 0, 0.4);
+            border-color: var(--secondary);
         }
 
         button {
-            padding: 15px 30px;
-            font-size: 1.2rem;
+            padding: 18px 40px;
+            font-size: 1.3rem;
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin: 10px;
-            font-weight: bold;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+            color: var(--primary);
+            font-weight: 800;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 0 auto;
+            width: 100%;
         }
 
-        #recordButton {
-            background: #ff4757;
+        button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            background: #f1f2f6;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button.recording {
+            background: var(--accent);
             color: white;
-            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
-        }
-
-        #recordButton:hover {
-            transform: scale(1.05);
-            background: #ff6b81;
-        }
-
-        #recordButton.recording {
-            animation: pulse 1.5s infinite;
-            background: #2ed573;
+            animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
             0% {
-                box-shadow: 0 0 0 0 rgba(46, 213, 115, 0.7);
+                box-shadow: 0 0 0 0 rgba(255, 118, 117, 0.7);
             }
 
             70% {
-                box-shadow: 0 0 0 20px rgba(46, 213, 115, 0);
+                box-shadow: 0 0 0 20px rgba(255, 118, 117, 0);
             }
 
             100% {
-                box-shadow: 0 0 0 0 rgba(46, 213, 115, 0);
+                box-shadow: 0 0 0 0 rgba(255, 118, 117, 0);
             }
         }
 
         #status {
-            margin-top: 1rem;
-            font-size: 1.1rem;
-            min-height: 1.5rem;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #b2bec3;
+            min-height: 1.2rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
         }
 
         #result {
             margin-top: 2rem;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
             display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .text-output {
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             margin-bottom: 1rem;
-            font-weight: 500;
+            line-height: 1.5;
+            color: #fff;
+        }
+
+        audio {
+            width: 100%;
+            height: 40px;
+            border-radius: 20px;
+        }
+
+        audio::-webkit-media-controls-panel {
+            background: rgba(255, 255, 255, 0.8);
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>🎙️ Live Translator</h1>
-        <button id="recordButton">Hold to Speak</button>
-        <div id="status">Ready</div>
+        <h1>🎙️ LinguaFlow</h1>
+        <p class="subtitle">Real-time Speech Translation</p>
+
+        <div class="control-panel">
+            <select id="languageSelect">
+                <option value="fra_Latn">🇫🇷 French (Français)</option>
+                <option value="deu_Latn">🇩🇪 German (Deutsch)</option>
+                <option value="spa_Latn">🇪🇸 Spanish (Español)</option>
+                <option value="hin_Deva">🇮🇳 Hindi (हिन्दी)</option>
+                <option value="zho_Hans">🇨🇳 Chinese (中文)</option>
+                <option value="arb_Arab">🇸🇦 Arabic (العربية)</option>
+                <option value="rus_Cyrl">🇷🇺 Russian (Русский)</option>
+            </select>
+        </div>
+
+        <button id="recordButton">
+            <span class="icon">🎙️</span> Hit to Record
+        </button>
+
+        <div id="status">Ready to translate</div>
 
         <div id="result">
+            <h3>Translation</h3>
             <div class="text-output" id="translatedText"></div>
-            <audio id="audioPlayer" controls style="width: 100%"></audio>
+            <audio id="audioPlayer" controls></audio>
         </div>
     </div>
 
@@ -115,6 +223,7 @@
         const resultDiv = document.getElementById('result');
         const translatedTextDiv = document.getElementById('translatedText');
         const audioPlayer = document.getElementById('audioPlayer');
+        const languageSelect = document.getElementById('languageSelect');
 
         let mediaRecorder;
         let audioChunks = [];
@@ -128,13 +237,16 @@
 
             socket.onopen = () => {
                 console.log('Connected to WebSocket');
-                statusDiv.textContent = 'Ready';
+                statusDiv.textContent = 'Connected & Ready';
+
+                // Send initial language
+                sendLanguageUpdate();
             };
 
             socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 if (data.status === 'success') {
-                    statusDiv.textContent = 'Translation Received!';
+                    statusDiv.textContent = 'Translation Complete! 🎉';
                     translatedTextDiv.textContent = data.text;
 
                     // Play audio
@@ -142,6 +254,8 @@
                     audioPlayer.src = audioSrc;
                     resultDiv.style.display = 'block';
                     audioPlayer.play();
+                } else if (data.status === 'info') {
+                    console.log(data.message);
                 } else {
                     statusDiv.textContent = 'Error: ' + data.message;
                 }
@@ -158,6 +272,15 @@
                 statusDiv.textContent = 'Connection Error';
             };
         }
+
+        function sendLanguageUpdate() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                const lang = languageSelect.value;
+                socket.send(JSON.stringify({ language: lang }));
+            }
+        }
+
+        languageSelect.addEventListener('change', sendLanguageUpdate);
 
         connectWebSocket();
 
@@ -192,43 +315,37 @@
                     audioChunks = [];
                 };
 
-                recordButton.addEventListener('mousedown', () => {
+                const startRecording = () => {
                     if (mediaRecorder.state === 'inactive') {
                         mediaRecorder.start();
                         recordButton.classList.add('recording');
-                        recordButton.textContent = 'Listening...';
+                        recordButton.innerHTML = '<span class="icon">🛑</span> Listening...';
                         statusDiv.textContent = 'Recording...';
                         resultDiv.style.display = 'none';
                     }
-                });
+                };
 
-                recordButton.addEventListener('mouseup', () => {
+                const stopRecording = () => {
                     if (mediaRecorder.state === 'recording') {
                         mediaRecorder.stop();
                         recordButton.classList.remove('recording');
-                        recordButton.textContent = 'Hold to Speak';
+                        recordButton.innerHTML = '<span class="icon">🎙️</span> Hit to Record';
                     }
-                });
+                };
 
-                // For touch support
+                // Support both click/touch to start/stop
+                recordButton.addEventListener('mousedown', startRecording);
+                recordButton.addEventListener('mouseup', stopRecording);
+                recordButton.addEventListener('mouseleave', stopRecording);
+
                 recordButton.addEventListener('touchstart', (e) => {
                     e.preventDefault();
-                    if (mediaRecorder.state === 'inactive') {
-                        mediaRecorder.start();
-                        recordButton.classList.add('recording');
-                        recordButton.textContent = 'Listening...';
-                        statusDiv.textContent = 'Recording...';
-                        resultDiv.style.display = 'none';
-                    }
+                    startRecording();
                 });
 
                 recordButton.addEventListener('touchend', (e) => {
                     e.preventDefault();
-                    if (mediaRecorder.state === 'recording') {
-                        mediaRecorder.stop();
-                        recordButton.classList.remove('recording');
-                        recordButton.textContent = 'Hold to Speak';
-                    }
+                    stopRecording();
                 });
             })
             .catch(err => {

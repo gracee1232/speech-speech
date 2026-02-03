@@ -22,14 +22,32 @@ async def websocket_endpoint(websocket: WebSocket):
     print("WebSocket connected")
     
     try:
+        current_lang = "fra_Latn"
+        
         while True:
-            # Receive audio bytes from client
-            data = await websocket.receive_bytes()
-            print(f"Received audio tokens: {len(data)} bytes")
+            # Receive message
+            message = await websocket.receive()
             
-            if len(data) < 2000:
-                print("Ignoring small audio packet")
-                continue
+            if "text" in message:
+                try:
+                    import json
+                    text_data = json.loads(message["text"])
+                    if "language" in text_data:
+                        current_lang = text_data["language"]
+                        print(f"Language updated to: {current_lang}")
+                        await websocket.send_json({"status": "info", "message": f"Language set to {current_lang}"})
+                    continue
+                except Exception as e:
+                    print(f"Error parsing text message: {e}")
+                    continue
+
+            if "bytes" in message:
+                data = message["bytes"]
+                print(f"Received audio tokens: {len(data)} bytes")
+                
+                if len(data) < 2000:
+                    print("Ignoring small audio packet")
+                    continue
             
             # Create unique filenames for this request
             session_id = str(uuid.uuid4())
@@ -47,11 +65,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 # checking if full_pipeline is async... it is not.
                 # using asyncio.to_thread to run blocking code
                 
-                print("Running pipeline...")
+                print(f"Running pipeline with lang={current_lang}...")
                 refined_text, generated_audio_path = await asyncio.to_thread(
                     full_pipeline, 
                     audio_input=input_filename, 
-                    target_lang="fra_Latn", # Default or extract from message if we used JSON
+                    target_lang=current_lang,
                     output_audio_path=output_filename
                 )
                 

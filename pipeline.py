@@ -31,13 +31,15 @@ def full_pipeline(audio_input, target_lang="fra_Latn", output_audio_path="final_
     print(f"Translated Text: {translated_text}")
     print(f"Translation Time: {mt_time:.2f} seconds")
 
-    print("\nSTEP 3: LLM Refinement (TinyLlama)")
-    start_time = time.time()
-    refined_text = refine_text(translated_text, target_lang)
-    llm_time = time.time() - start_time
-    print(f"LLM Output: {refined_text}")
-    print(f"LLM Refinement Time: {llm_time:.2f} seconds")
-
+    # print("\nSTEP 3: LLM Refinement (Skipped for accuracy)")
+    # start_time = time.time()
+    # refined_text = refine_text(translated_text, target_lang)
+    # llm_time = time.time() - start_time
+    # print(f"LLM Output: {refined_text}")
+    # print(f"LLM Refinement Time: {llm_time:.2f} seconds")
+    
+    refined_text = translated_text
+     
     print("\nSTEP 4: Text → Speech (Coqui TTS)")
     start_time = time.time()
     output_audio = output_audio_path
@@ -46,11 +48,14 @@ def full_pipeline(audio_input, target_lang="fra_Latn", output_audio_path="final_
     print(f"Generated Audio: {output_audio}")
     print(f"TTS Time: {tts_time:.2f} seconds")
     
+    llm_time = 0.0
+    
     total_time = asr_time + mt_time + llm_time + tts_time
     print(f"\n⏱️  Total Pipeline Time: {total_time:.2f} seconds")
     print(f"   - ASR: {asr_time:.2f}s ({asr_time/total_time*100:.1f}%)")
     print(f"   - Translation: {mt_time:.2f}s ({mt_time/total_time*100:.1f}%)")
-    print(f"   - LLM Refinement: {llm_time:.2f}s ({llm_time/total_time*100:.1f}%)")
+    if llm_time > 0:
+        print(f"   - LLM Refinement: {llm_time:.2f}s ({llm_time/total_time*100:.1f}%)")
     print(f"   - TTS: {tts_time:.2f}s ({tts_time/total_time*100:.1f}%)")
 
     return refined_text, output_audio

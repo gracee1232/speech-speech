@@ -41,7 +41,7 @@ def full_pipeline(audio_input, target_lang="fra_Latn", output_audio_path="final_
     print("\nSTEP 4: Text → Speech (Coqui TTS)")
     start_time = time.time()
     output_audio = output_audio_path
-    text_to_speech(refined_text, output_audio)
+    output_audio = text_to_speech(refined_text, output_audio)
     tts_time = time.time() - start_time
     print(f"Generated Audio: {output_audio}")
     print(f"TTS Time: {tts_time:.2f} seconds")

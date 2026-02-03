@@ -1,3 +1,12 @@
+---
+title: Fast Speech Translator
+emoji: ⚡
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+---
+
 # Speech-to-Speech Translation Pipeline
 
 A comprehensive speech translation system that converts spoken English to multiple languages and generates translated audio output.

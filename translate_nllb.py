@@ -25,8 +25,11 @@ class NLLBTranslator:
         # Move inputs to same device as model
         inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
         
+        # Get target language token ID
+        target_lang_id = self.tokenizer.convert_tokens_to_ids(self.target_lang)
+        
         generated_tokens = self.model.generate(
             **inputs,
-            forced_bos_token_id=self.tokenizer.lang_code_to_id[self.target_lang]
+            forced_bos_token_id=target_lang_id
         )
         return self.tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)[0]

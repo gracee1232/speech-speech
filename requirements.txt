@@ -1,13 +1,16 @@
-torch==2.2.2
-torchaudio==2.2.2
+streamlit>=1.31
+
+torch
+torchaudio
+
 openai-whisper
 transformers==4.39.3
 sentencepiece
 sacremoses
 accelerate
+
 soundfile
 numpy
-streamlit>=1.31
 gtts
 
 

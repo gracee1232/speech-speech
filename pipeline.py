@@ -13,7 +13,7 @@ from llm_tinyllama import refine_text
 from tts_coqui import text_to_speech
 
 
-def full_pipeline(audio_input, target_lang="fra_Latn"):
+def full_pipeline(audio_input, target_lang="fra_Latn", output_audio_path="final_output.wav"):
     import time
     
     print("STEP 1: Speech → Text (ASR)")
@@ -40,7 +40,7 @@ def full_pipeline(audio_input, target_lang="fra_Latn"):
 
     print("\nSTEP 4: Text → Speech (Coqui TTS)")
     start_time = time.time()
-    output_audio = "final_output.wav"
+    output_audio = output_audio_path
     text_to_speech(refined_text, output_audio)
     tts_time = time.time() - start_time
     print(f"Generated Audio: {output_audio}")

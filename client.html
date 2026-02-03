@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Speech Translator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            font-weight: bold;
+        }
+        #recordButton {
+            background: #ff4757;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+        }
+        #recordButton:hover {
+            transform: scale(1.05);
+            background: #ff6b81;
+        }
+        #recordButton.recording {
+            animation: pulse 1.5s infinite;
+            background: #2ed573;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(46, 213, 115, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(46, 213, 115, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(46, 213, 115, 0); }
+        }
+        #status {
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            min-height: 1.5rem;
+        }
+        #result {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: none;
+        }
+        .text-output {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ Live Translator</h1>
+        <button id="recordButton">Hold to Speak</button>
+        <div id="status">Ready</div>
+        
+        <div id="result">
+            <div class="text-output" id="translatedText"></div>
+            <audio id="audioPlayer" controls style="width: 100%"></audio>
+        </div>
+    </div>
+
+    <script>
+        const recordButton = document.getElementById('recordButton');
+        const statusDiv = document.getElementById('status');
+        const resultDiv = document.getElementById('result');
+        const translatedTextDiv = document.getElementById('translatedText');
+        const audioPlayer = document.getElementById('audioPlayer');
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let socket;
+
+        // Initialize WebSocket
+        function connectWebSocket() {
+            socket = new WebSocket('ws://localhost:8000/ws');
+            
+            socket.onopen = () => {
+                console.log('Connected to WebSocket');
+                statusDiv.textContent = 'Ready';
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.status === 'success') {
+                    statusDiv.textContent = 'Translation Received!';
+                    translatedTextDiv.textContent = data.text;
+                    
+                    // Play audio
+                    const audioSrc = `data:audio/mp3;base64,${data.audio}`;
+                    audioPlayer.src = audioSrc;
+                    resultDiv.style.display = 'block';
+                    audioPlayer.play();
+                } else {
+                    statusDiv.textContent = 'Error: ' + data.message;
+                }
+            };
+
+            socket.onclose = () => {
+                console.log('Disconnected');
+                statusDiv.textContent = 'Disconnected. Reconnecting...';
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            socket.onerror = (error) => {
+                console.error('WebSocket Error:', error);
+                statusDiv.textContent = 'Connection Error';
+            };
+        }
+
+        connectWebSocket();
+
+        // Audio Recording
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    // Convert Blob to ArrayBuffer and send
+                    audioBlob.arrayBuffer().then(buffer => {
+                        if (socket.readyState === WebSocket.OPEN) {
+                            socket.send(buffer);
+                            statusDiv.textContent = 'Processing...';
+                        } else {
+                            statusDiv.textContent = 'Connection not open';
+                        }
+                    });
+                    audioChunks = [];
+                };
+
+                recordButton.addEventListener('mousedown', () => {
+                    if (mediaRecorder.state === 'inactive') {
+                        mediaRecorder.start();
+                        recordButton.classList.add('recording');
+                        recordButton.textContent = 'Listening...';
+                        statusDiv.textContent = 'Recording...';
+                        resultDiv.style.display = 'none';
+                    }
+                });
+
+                recordButton.addEventListener('mouseup', () => {
+                    if (mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                        recordButton.classList.remove('recording');
+                        recordButton.textContent = 'Hold to Speak';
+                    }
+                });
+                
+                // For touch support
+                recordButton.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    if (mediaRecorder.state === 'inactive') {
+                        mediaRecorder.start();
+                        recordButton.classList.add('recording');
+                        recordButton.textContent = 'Listening...';
+                        statusDiv.textContent = 'Recording...';
+                        resultDiv.style.display = 'none';
+                    }
+                });
+
+                recordButton.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    if (mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                        recordButton.classList.remove('recording');
+                        recordButton.textContent = 'Hold to Speak';
+                    }
+                });
+            })
+            .catch(err => {
+                console.error('Error accessing microphone:', err);
+                statusDiv.textContent = 'Microphone access denied';
+            });
+    </script>
+</body>
+</html>

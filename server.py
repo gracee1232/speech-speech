@@ -1,0 +1,83 @@
+import os
+import uuid
+import base64
+import asyncio
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse
+from pipeline import full_pipeline
+import speech_recognition as sr
+import io
+
+app = FastAPI()
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    print("WebSocket connected")
+    
+    try:
+        while True:
+            # Receive audio bytes from client
+            data = await websocket.receive_bytes()
+            print(f"Received audio tokens: {len(data)} bytes")
+            
+            # Create unique filenames for this request
+            session_id = str(uuid.uuid4())
+            input_filename = f"temp_input_{session_id}.wav"
+            output_filename = f"temp_output_{session_id}.wav"
+            
+            try:
+                # Save received audio to file
+                # Assuming the client sends a WAV file directly
+                with open(input_filename, "wb") as f:
+                    f.write(data)
+                
+                # Run the pipeline
+                # Ideally, this should run in a thread pool to avoid blocking the event loop
+                # checking if full_pipeline is async... it is not.
+                # using asyncio.to_thread to run blocking code
+                
+                print("Running pipeline...")
+                refined_text, generated_audio_path = await asyncio.to_thread(
+                    full_pipeline, 
+                    audio_input=input_filename, 
+                    target_lang="fra_Latn", # Default or extract from message if we used JSON
+                    output_audio_path=output_filename
+                )
+                
+                print(f"Pipeline finished. Text: {refined_text}")
+                
+                # Check if output file exists
+                if os.path.exists(generated_audio_path):
+                    with open(generated_audio_path, "rb") as audio_file:
+                        audio_data = audio_file.read()
+                        audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+                    
+                    # Send response back to client
+                    await websocket.send_json({
+                        "text": refined_text,
+                        "audio": audio_base64,
+                        "status": "success"
+                    })
+                else:
+                     await websocket.send_json({
+                        "status": "error",
+                        "message": "Output audio generation failed"
+                    })
+
+            except Exception as e:
+                print(f"Error processing request: {e}")
+                await websocket.send_json({
+                    "status": "error",
+                    "message": str(e)
+                })
+            
+            finally:
+                # Cleanup temp files
+                if os.path.exists(input_filename):
+                    os.remove(input_filename)
+                if os.path.exists(output_filename):
+                    os.remove(output_filename)
+                    
+    except WebSocketDisconnect:
+        print("Client disconnected")

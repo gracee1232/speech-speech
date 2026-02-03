@@ -1,3 +1,4 @@
+import traceback
 import streamlit as st
 import tempfile
 import os
@@ -316,6 +317,7 @@ def process_audio_fast(audio_bytes, target_lang):
         
     except Exception as e:
         st.error(f"❌ Error: {str(e)}")
+        st.code(traceback.format_exc())
         st.info("💡 Please try recording again")
     
     finally:

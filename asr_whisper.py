@@ -46,21 +46,28 @@ def fallback_asr(audio_path: str) -> str:
         print(f"Fallback ASR error: {e}")
         return ""
 
+# Global model loading
+print("Loading Whisper Tiny model...")
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Using device: {device}")
+
+try:
+    GLOBAL_WHISPER_MODEL = whisper.load_model("tiny", device=device)
+except Exception as e:
+    print(f"Failed to load global Whisper model: {e}")
+    GLOBAL_WHISPER_MODEL = None
+
 def speech_to_text(audio_path: str) -> str:
-    print("Loading Whisper Tiny model...")
-    
-    # Determine device
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Using device: {device}")
-    
-    try:
-        model = whisper.load_model("tiny", device=device)
-    except Exception as e:
-        print(f"Failed to load Whisper: {e}")
-        print("Using fallback ASR...")
+    if GLOBAL_WHISPER_MODEL is None:
+        print("Whisper model not loaded, using fallback...")
         return fallback_asr(audio_path)
     
     try:
+        # Convert to WAV if needed
+        if not audio_path.endswith('.wav'):
+            # ... existing code ...
+            pass # We will keep the original logic below but use GLOBAL_WHISPER_MODEL
+
         # Convert to WAV if needed
         if not audio_path.endswith('.wav'):
             print("Converting audio to WAV format...")
@@ -85,7 +92,7 @@ def speech_to_text(audio_path: str) -> str:
         print(f"File readable: {os.access(audio_path, os.R_OK)}")
         
         try:
-            result = model.transcribe(
+            result = GLOBAL_WHISPER_MODEL.transcribe(
                 audio_path, 
                 fp16=False,  # Force CPU mode
                 language="en",

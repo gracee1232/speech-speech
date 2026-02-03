@@ -27,6 +27,10 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_bytes()
             print(f"Received audio tokens: {len(data)} bytes")
             
+            if len(data) < 2000:
+                print("Ignoring small audio packet")
+                continue
+            
             # Create unique filenames for this request
             session_id = str(uuid.uuid4())
             input_filename = f"temp_input_{session_id}.wav"

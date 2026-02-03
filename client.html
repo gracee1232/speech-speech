@@ -172,11 +172,19 @@
 
                 mediaRecorder.onstop = () => {
                     const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+
+                    if (audioBlob.size < 1000) {
+                        console.log("Audio too short, ignoring");
+                        statusDiv.textContent = 'Too short. Hold button longer.';
+                        audioChunks = [];
+                        return;
+                    }
+
                     // Convert Blob to ArrayBuffer and send
                     audioBlob.arrayBuffer().then(buffer => {
                         if (socket.readyState === WebSocket.OPEN) {
                             socket.send(buffer);
-                            statusDiv.textContent = 'Processing...';
+                            statusDiv.textContent = 'Processing (Wait for it)...';
                         } else {
                             statusDiv.textContent = 'Connection not open';
                         }

@@ -12,3 +12,7 @@ gtts
 SpeechRecognition
 setuptools
 wheel
+fastapi
+uvicorn
+websockets
+python-multipart

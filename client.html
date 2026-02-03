@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,6 +17,7 @@
             min-height: 100vh;
             margin: 0;
         }
+
         .container {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -26,10 +28,12 @@
             max-width: 500px;
             width: 100%;
         }
+
         h1 {
             margin-bottom: 2rem;
             font-size: 2.5rem;
         }
+
         button {
             padding: 15px 30px;
             font-size: 1.2rem;
@@ -40,29 +44,43 @@
             margin: 10px;
             font-weight: bold;
         }
+
         #recordButton {
             background: #ff4757;
             color: white;
             box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
         }
+
         #recordButton:hover {
             transform: scale(1.05);
             background: #ff6b81;
         }
+
         #recordButton.recording {
             animation: pulse 1.5s infinite;
             background: #2ed573;
         }
+
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(46, 213, 115, 0.7); }
-            70% { box-shadow: 0 0 0 20px rgba(46, 213, 115, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(46, 213, 115, 0); }
+            0% {
+                box-shadow: 0 0 0 0 rgba(46, 213, 115, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 20px rgba(46, 213, 115, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(46, 213, 115, 0);
+            }
         }
+
         #status {
             margin-top: 1rem;
             font-size: 1.1rem;
             min-height: 1.5rem;
         }
+
         #result {
             margin-top: 2rem;
             padding: 1rem;
@@ -70,6 +88,7 @@
             border-radius: 10px;
             display: none;
         }
+
         .text-output {
             font-size: 1.5rem;
             margin-bottom: 1rem;
@@ -77,12 +96,13 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>🎙️ Live Translator</h1>
         <button id="recordButton">Hold to Speak</button>
         <div id="status">Ready</div>
-        
+
         <div id="result">
             <div class="text-output" id="translatedText"></div>
             <audio id="audioPlayer" controls style="width: 100%"></audio>
@@ -102,8 +122,10 @@
 
         // Initialize WebSocket
         function connectWebSocket() {
-            socket = new WebSocket('ws://localhost:8000/ws');
-            
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            socket = new WebSocket(wsUrl);
+
             socket.onopen = () => {
                 console.log('Connected to WebSocket');
                 statusDiv.textContent = 'Ready';
@@ -114,7 +136,7 @@
                 if (data.status === 'success') {
                     statusDiv.textContent = 'Translation Received!';
                     translatedTextDiv.textContent = data.text;
-                    
+
                     // Play audio
                     const audioSrc = `data:audio/mp3;base64,${data.audio}`;
                     audioPlayer.src = audioSrc;
@@ -130,7 +152,7 @@
                 statusDiv.textContent = 'Disconnected. Reconnecting...';
                 setTimeout(connectWebSocket, 3000);
             };
-            
+
             socket.onerror = (error) => {
                 console.error('WebSocket Error:', error);
                 statusDiv.textContent = 'Connection Error';
@@ -179,7 +201,7 @@
                         recordButton.textContent = 'Hold to Speak';
                     }
                 });
-                
+
                 // For touch support
                 recordButton.addEventListener('touchstart', (e) => {
                     e.preventDefault();
@@ -207,4 +229,5 @@
             });
     </script>
 </body>
+
 </html>

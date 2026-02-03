@@ -10,6 +10,12 @@ import io
 
 app = FastAPI()
 
+@app.get("/")
+async def get():
+    with open("client.html", "r", encoding="utf-8") as f:
+        html_content = f.read()
+    return HTMLResponse(content=html_content)
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()

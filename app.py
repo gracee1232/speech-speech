@@ -173,7 +173,7 @@ def main():
             """, unsafe_allow_html=True)
             
             target_lang = st.selectbox(
-                "",
+                "Target Language",
                 options=[
                     ("🇫🇷 French", "fra_Latn"),
                     ("🇩🇪 German", "deu_Latn"),
@@ -185,7 +185,8 @@ def main():
                 ],
                 format_func=lambda x: x[0],
                 index=0,
-                key="language_selector"
+                key="language_selector",
+                label_visibility="collapsed"
             )
             
             # Audio input area
